@@ -1,0 +1,237 @@
+{% load position_extras %}
+{% load permission_extras %}
+{% load static %}
+{% load mptt_tags %}
+<div class="l-container scroll-and-get" id="permission-sec">
+    {% if current_module.permission_sub_module.all %}
+        {% for child_module in current_module.permission_sub_module.all %}
+            <div class="perm-title show-for-767">
+                {{child_module.module}}
+            </div>
+            <section class="left-flex toggle-section-panel" style="position: relative;" id="{{child_module.module}}" data-anchor="{{child_module.module}}">
+
+                <div class="l-section">
+                    <div class="perm-title toggle-section-tigger">
+                        {{child_module.module}}
+                    </div>
+                    <div class="c-left">
+                         {% for node,structure in all_positions|tree_info:"ancestors" %}
+                            {% if node.is_child_node %}
+                                {% if structure.ancestors|length == 1 %}
+                                    <div class="p-name l-two click-and-toggle" data-click="{{ node.id }}">{{ node }}</div>
+                                {% else %}
+                                    <div class="p-name l-three kpla-hide" data-hide="{{ node|get_root_node_id }}">{{ structure.ancestors|get_child_link }} {{ node }}</div>
+                                {% endif %}
+                            {% endif %}
+                         {% endfor %}
+                    </div>
+                </div>
+                <div class="c-right scrollH1" >
+                    <span class="divScroll left scroll-left1">
+                            <i class="glyph-icon flaticon-arrows-1"></i>
+                    </span>
+                    <span class="divScroll right scroll-right1">
+                            <i class="glyph-icon flaticon-arrows-1"></i>
+                    </span>
+                    <div class="perm-items">
+                        {% for permission in child_module.permission_lists.all %}
+                        <div class="perm-item"><div class="perm-name">{{permission.permission}}</div></div>
+                        {% endfor %}
+                    </div>
+                    {% for node,structure in all_positions|tree_info:"ancestors" %}
+                        {% if node.is_child_node %}
+                            {% if structure.ancestors|length == 1 %}
+                                <div class="row-flex">
+                                    {% for permission in child_module.permission_lists.all %}
+                                    <div class="selectCon">
+                                        <select class="no-select-style" data-for="{{node}}" data-in="{{child_module.id}}"  data-attr="{{permission.id}}">
+                                            {% for mode in permission_modes %}
+                                                <option value="{{mode}}" {% selected_permission node child_module permission mode %}>{{mode.mode}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="row-flex kpla-hide" data-hide="{{node|get_root_node_id}}">
+                                    {% for permission in  child_module.permission_lists.all  %}
+
+                                    <div class="selectCon">
+                                        <select class="no-select-style" data-for="{{node.id}}" data-in="{{child_module.id}}"  data-attr="{{permission.id}}" >
+                                            {% for mode in permission_modes %}
+                                                <option value="{{mode}}" {% selected_permission node child_module permission mode %}>{{mode.mode}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                     {% endfor %}
+                    </div>
+                </section> <!-- Bank Accounts -->
+        {% endfor %}
+    {% else %}
+        <div class="perm-title show-for-767">
+            {{current_module.module}}
+        </div>
+        <section class="left-flex toggle-section-panel" style="position: relative;" id="{{current_module.module}}" data-anchor="{{current_module.module}}">
+            <div class="table-loader-pre model-loader" style="display: none; position: absolute; left:0; top: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 1); z-index: 5;">
+                <div class="pre-loader-wrapper" style="">
+                    <div class="loader">
+                    </div>
+                    Loading
+                </div>
+            </div>
+            <div class="l-section">
+                <div class="perm-title toggle-section-tigger">
+                    {{current_module.module}}
+                </div>
+                <div class="c-left">
+                     {% for node,structure in all_positions|tree_info:"ancestors" %}
+                        {% if node.is_child_node %}
+                            {% if structure.ancestors|length == 1 %}
+                                <div class="p-name l-two click-and-toggle" data-click="{{ node.id }}">{{ node}} </div>
+                            {% else %}
+                                <div class="p-name l-three kpla-hide" data-hide="{{ node|get_root_node_id }}">{{ structure.ancestors|get_child_link }} {{ node }}</div>
+                            {% endif %}
+                        {% else %}
+                                <div class="p-name l-two click-and-toggle" data-click="{{ node.id }}">{{ node}} </div>
+
+                        {% endif %}
+                     {% endfor %}
+                </div>
+            </div>
+            <div class="c-right scrollH1" >
+                <span class="divScroll left scroll-left1">
+                        <i class="glyph-icon flaticon-arrows-1"></i>
+                </span>
+                <span class="divScroll right scroll-right1">
+                        <i class="glyph-icon flaticon-arrows-1"></i>
+                </span>
+                <div class="perm-items">
+                    {% for permission in current_module.permission_lists.all %}
+                    <div class="perm-item"><div class="perm-name">{{permission.permission}}</div></div>
+                    {% endfor %}
+                </div>
+
+                {% for node,structure in all_positions|tree_info:"ancestors" %}
+                    {% if node.is_child_node %}
+
+                        {% if structure.ancestors|length == 1 %}
+                            <div class="row-flex" data-row-id="{{node.id}}">
+                                {% for permission in current_module.permission_lists.all %}
+                                {% get_permission_mode node.parent current_module permission as parent_permission_mode  %}
+                                {% get_permission_mode request.user.active_position current_module permission 'is_inherited' as current_permission_mode  %}
+                                {% selected_permission node current_module permission as position_mode %}
+                                <div  class="selectCon  {% if request.user.active_position == node %}disabled {%endif%}{% if current_permission_mode == 'Deny' or current_permission_mode == 'Not Set' %} disabled {%endif%}" >
+                                    <select class="no-select-style"  data-for="{{node.id}}"  data-in="{{current_module.id}}" data-attr="{{permission.id}}">
+                                        {% if request.user.active_position == node %}
+                                            <option selected="selected" class="{% get_mode_color  current_permission_mode.mode  %}" data-col="{% get_mode_color current_permission_mode.mode %}">{{current_permission_mode}}</option>
+                                        {% elif current_permission_mode == 'Deny' or current_permission_mode == 'Not Set' %}
+                                            <option selected="selected" data-col="{% get_mode_color current_permission_mode.mode %}" class="{% get_mode_color current_permission_mode.mode %}">{% get_permission_mode node current_module permission %}</option>
+                                        {% else %}
+                                              {% get_permission_mode node current_module permission as is_permission_set %}
+                                              {% if is_permission_set == 'Not Set'  %}
+                                                    <option selected="selected" class="{% get_mode_color is_permission_set %}" data-col="{% get_mode_color is_permission_set %}">Not Set</option>
+                                              {% endif %}
+
+                                              {% for mode in permission_modes %}
+                                              {% if mode.mode == 'Inherit' %}
+                                                    <option value="{{mode}}"   {% if position_mode.id == mode.id %} selected="selected" data-col="{% get_mode_color parent_permission_mode node.parent current_module permission %}"  class="{% get_mode_color mode.mode node current_module permission %}" {% else %} data-col="{% get_mode_color  mode.mode  %}"  class="{% get_mode_color parent_permission_mode node.parent current_module permission %}" data-backdrop="TTT" {% endif %}>{{mode.mode}}</option>
+                                              {% else %}
+                                                    <option value="{{mode}}"   {% if position_mode.id == mode.id %} selected="selected" data-col="{% get_mode_color  mode.mode node current_module permission %}"  class="{% get_mode_color mode.mode node current_module permission %}" {% else %} data-col="{% get_mode_color  mode.mode  %}" class="{% get_mode_color mode.mode %}" {% endif %}>{{mode.mode}}</option>
+                                              {% endif %}
+                                              {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="row-flex kpla-hide" data-hide="{{node|get_root_node_id}}"  data-row-id="{{node.id}}">
+                                {% for permission in current_module.permission_lists.all %}
+                                {% get_permission_mode node.parent current_module permission as parent_permission_mode  %}
+                                {% get_permission_mode request.user.active_position current_module permission 'is_inherited' as current_permission_mode  %}
+                                {% selected_permission node current_module permission as position_mode %}
+                                <div class="selectCon {% if request.user.active_position == node %}disabled  {%endif%}{%  if current_permission_mode == 'Deny' or current_permission_mode == 'Not Set' %} disabled{%endif%}">
+                                    <select class="no-select-style"  data-for="{{node.id}}" data-in="{{current_module.id}}"  data-attr="{{permission.id}}" >
+                                        {% if request.user.active_position == node %}
+                                                <option selected="selected" class="{% get_mode_color current_permission_mode.mode %}" data-col="{% get_mode_color current_permission_mode.mode %}">{{current_permission_mode}}</option>
+                                        {% elif current_permission_mode == 'Deny' or current_permission_mode == 'Not Set' %}
+                                            <option selected="selected" class="{% get_mode_color current_permission_mode.mode %}"  data-col="{% get_mode_color current_permission_mode.mode %}">{% get_permission_mode node current_module permission %}</option>
+                                        {% else %}
+                                              {% get_permission_mode node current_module permission as is_permission_set %}
+                                              {% if is_permission_set == 'Not Set' %}
+                                                    <option selected="selected" class="{% get_mode_color is_permission_set %}" data-col="{% get_mode_color is_permission_set %}">Not Set</option>
+                                              {% endif %}
+                                              {% for mode in permission_modes %}
+                                                {% if mode.mode == 'Inherit' %}
+                                                    <option value="{{mode}}"   {% if position_mode.id == mode.id %} selected="selected" data-col="{% get_mode_color mode.mode node current_module permission %}"  class="{% get_mode_color parent_permission_mode node.parent current_module permission %}" {% else %} data-col="{% get_mode_color  mode.mode %}"  class="{% get_mode_color parent_permission_mode node.parent current_module permission %}"  {% endif %}>{{mode.mode}}</option>
+                                                {% else %}
+                                                     <option value="{{mode}}"   {% if position_mode.id == mode.id %} selected="selected" data-col="{% get_mode_color mode.mode node current_module permission %}"  class="{% get_mode_color mode.mode node current_module permission %}" {% else %} data-col="{% get_mode_color  mode.mode %}"  class="{% get_mode_color mode.mode  %}" {% endif %}>{{mode.mode}}</option>
+                                                {% endif %}
+                                              {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        {% if structure.ancestors|length == 1 %}
+                            <div class="row-flex"  data-row-id="{{node.id}}">
+                                {% for permission in current_module.permission_lists.all %}
+                                {% get_permission_mode request.user.active_position current_module permission 'is_inherited' as current_permission_mode  %}
+                                {% selected_permission node current_module permission as position_mode %}
+                                <div class="selectCon {% if request.user.active_position == node %}disabled {%endif%}{% if current_permission_mode == 'Deny' or current_permission_mode == 'Not Set' %} disabled {%endif%}" >
+                                    <select class="no-select-style" data-for="{{node.id}}"  data-in="{{current_module.id}}" data-attr="{{permission.id}}">
+                                        {% if request.user.active_position == node %}
+                                            <option selected="selected" class="{% get_mode_color current_permission_mode.mode %}" data-col="{% get_mode_color current_permission_mode.mode %}">{{current_permission_mode}}</option>
+                                        {% elif current_permission_mode == 'Deny' or current_permission_mode == 'Not Set' %}
+                                            <option selected="selected" class="{% get_mode_color current_permission_mode.mode %}" data-col="{% get_mode_color current_permission_mode.mode %}">{% get_permission_mode node current_module permission %}</option>
+                                        {% else %}
+                                              {% for mode in permission_modes %}
+                                              {% if mode.mode == 'Inherit' %}
+                                                    <option value="{{mode}}"  {% if position_mode.id == mode.id %} selected="selected" data-col="{% get_mode_color mode.mode node current_module permission %}"  class="{% get_mode_color mode.mode node current_module permission %}" {% else %} data-col="{% get_mode_color  mode.mode %}" class="{% get_mode_color parent_permission_mode node.parent current_module permission %}" {% endif %}>{{mode.mode}}</option>
+                                              {% else %}
+                                                   <option value="{{mode}}"  {% if position_mode.id == mode.id %} selected="selected" data-col="{% get_mode_color mode.mode node current_module permission %}"  class="{% get_mode_color mode.mode node current_module permission %}" {% else %} data-col="{% get_mode_color  mode.mode %}" class="{% get_mode_color mode.mode %}" {% endif %}>{{mode.mode}}</option>
+                                              {% endif %}
+                                              {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="row-flex kpla-hide" data-hide="{{node|get_root_node_id}}"  data-row-id="{{node.id}}">
+                                {% for permission in current_module.permission_lists.all %}
+                                {% get_permission_mode request.user.active_position current_module permission 'is_inherited' as current_permission_mode  %}
+                                {% selected_permission node current_module permission as position_mode %}
+                                <div class="selectCon {% if request.user.active_position == node %}disabled  {%endif%}{%  if current_permission_mode == 'Deny' or current_permission_mode == 'Not Set' %} disabled{%endif%}">
+                                    <select class="no-select-style" data-for="{{node.id}}" data-in="{{current_module.id}}"  data-attr="{{permission.id}}" >
+                                        {% if request.user.active_position == node %}
+                                                <option selected="selected" class="{% get_mode_color current_permission_mode.mode %}" data-col="{% get_mode_color current_permission_mode.mode %}">{{current_permission_mode}}</option>
+                                        {% elif current_permission_mode == 'Deny' or current_permission_mode == 'Not Set' %}
+                                            <option selected="selected" value=""  class="{% get_mode_color current_permission_mode.mode %}" data-col="{% get_mode_color current_permission_mode.mode %}">{% get_permission_mode node current_module permission %}</option>
+                                        {% else %}
+                                              {% for mode in permission_modes %}
+                                              {% if mode.mode == 'Inherit' %}
+                                                    <option value="{{mode}}"  {% if position_mode.id == mode.id %} selected="selected" data-col="{% get_mode_color mode.mode node current_module permission %}"  class="{% get_mode_color mode.mode node current_module permission %}" {% else %} data-col="{% get_mode_color  mode.mode %}" class="{% get_mode_color parent_permission_mode node.parent current_module permission %}" {% endif %}>{{mode.mode}}</option>
+                                              {% else %}
+                                                   <option value="{{mode}}"  {% if position_mode.id == mode.id %} selected="selected" data-col="{% get_mode_color mode.mode node current_module permission %}"  class="{% get_mode_color mode.mode node current_module permission %}" {% else %} data-col="{% get_mode_color  mode.mode %}" class="{% get_mode_color mode.mode %}" {% endif %}>{{mode.mode}}</option>
+                                              {% endif %}
+                                              {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                 {% endfor %}
+
+            </div>
+        </section> <!-- Bank Accounts -->
+    {% endif %}
+</div>
